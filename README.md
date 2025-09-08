@@ -1,0 +1,6 @@
+- Iniitalise git (git init)
+- create src folder 
+- create app.js
+- install expressJS (npm i express) to create web server (nodeJS framework)
+- create github repo .
+- 
