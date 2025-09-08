@@ -1,0 +1,15 @@
+{
+  "name": "devtinderbackend",
+  "version": "1.0.0",
+  "description": "tinder for devs",
+  "license": "ISC",
+  "author": "Shivam Mittal",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
