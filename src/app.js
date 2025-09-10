@@ -63,7 +63,7 @@ app.get("/feed" , async(req,res)=>{
         const users = await UserModel.find(
             {}
         )
-        if(users === 0){
+        if(users.length === 0){
             res.status(404).send("No users found");
         }else{
             res.send(users);
@@ -97,13 +97,16 @@ app.patch("/updateUser",async(req,res)=>{
 
     try{
         const user = await UserModel.findByIdAndUpdate(id,updatedData,
-            {returnDocument : "after"} // it will return the updated document.
+            {returnDocument : "after" , // it will return the updated document.
+            runValidators : true }
             );
         if(!user){
-            res.status(404).send("User not found");
+            return res.status(404).send("User not found");
+        }else{
+            console.log(user);
+            return res.send("User updated successfully");
         }
-        console.log(user);
-        res.send("User updated successfully");
+        
     }
     catch(err){
         res.status(500).send("Error in updating user",err);
