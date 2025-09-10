@@ -5,6 +5,8 @@ const {validateUserData} = require("./utils/validation");
 const bcrypt = require('bcrypt');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
+const {auth} = require("./middlewares/auth");
+
 
 const app = express();
 
@@ -77,7 +79,7 @@ app.post("/signup", async (req, res) => {
 });
 
 // Get /user by email API creation .
-app.get("/user", async (req, res) => {
+app.get("/user", auth , async (req, res) => {
   const email = req.body.emailId;
   try {
 
@@ -98,7 +100,7 @@ app.get("/user", async (req, res) => {
 
 
 // Get /feed API creation .
-app.get("/feed" , async(req,res)=>{
+app.get("/feed" , auth , async(req,res)=>{
     try{
         const users = await UserModel.find(
             {}
@@ -116,7 +118,7 @@ app.get("/feed" , async(req,res)=>{
 
 
 // deleteByID API creation .
-app.delete("/deleteById", async(req,res)=>{
+app.delete("/deleteById", auth , async(req,res)=>{
     const id = req.body._id;
     try{
         const user = await UserModel.findByIdAndDelete(id);
@@ -131,7 +133,7 @@ app.delete("/deleteById", async(req,res)=>{
 
 
 // update the data of the user using patch API .
-app.patch("/updateUser/:userId",async(req,res)=>{
+app.patch("/updateUser/:userId" , auth , async(req,res)=>{
     const id = req.params?.userId;
     const updatedData = req.body;
 
@@ -207,7 +209,7 @@ app.post("/login" , async(req,res)=>{
                 { _id : user._id }
                 , "DEV@TINDER$123"  // SECRET KEY ---> should be long and complex.
                 // stored only inside server .
-                , { expiresIn : "1h" }  // token will expire in 1 hour.
+                // , { expiresIn : "1h" }  // token will expire in 1 hour.
             )   
 
             // attaching the token in cookie.
@@ -225,7 +227,7 @@ app.post("/login" , async(req,res)=>{
 
 
 // Profile API creation .
-app.get("/profile" , async(req,res)=>{
+app.get("/profile" ,async(req,res)=>{
     // get the cookie 
     const token = req.cookies?.auth_token;
     if(!token){
