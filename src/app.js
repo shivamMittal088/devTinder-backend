@@ -91,11 +91,41 @@ app.delete("/deleteById", async(req,res)=>{
 
 
 // update the data of the user using patch API .
-app.patch("/updateUser",async(req,res)=>{
-    const id = req.body._id;
+app.patch("/updateUser/:userId",async(req,res)=>{
+    const id = req.params?.userId;
     const updatedData = req.body;
 
     try{
+        const ALLOWED_UPDATES = ["firstName","lastName","password","age","photoURL","about","skills","gender"];
+        const requestedUpdates = Object.keys(updatedData);
+        const isValidOperation = requestedUpdates.every((update)=>{
+            return ALLOWED_UPDATES.includes(update);
+        })
+
+        if(!isValidOperation){
+            return res.status(400).send(
+                {
+                    error: "Invalid updates!",
+                    code: "INVALID_UPDATES",
+                    suggestion: `You can update only the following fields: ${ALLOWED_UPDATES.join(", ")}`
+                }
+            );
+        }
+
+        if(updatedData?.skills.length > 8){
+            return res.status(400).send(
+                {
+                    error: "Skills cannot be more than 8",
+                    code: "SKILLS_LIMIT_EXCEEDED",
+                    suggestion: "Please reduce the number of skills to 8 or fewer."
+                }
+            );
+        }
+
+        // we have send not string but an object of field in case of error 
+        // because we want to give more information about the error to the user and 
+        // it might be possible that in some case the user expected json object in response but we are sending string in case of error which is hard to parse than json object.
+
         const user = await UserModel.findByIdAndUpdate(id,updatedData,
             {returnDocument : "after" , // it will return the updated document.
             runValidators : true }
@@ -109,7 +139,7 @@ app.patch("/updateUser",async(req,res)=>{
         
     }
     catch(err){
-        res.status(500).send("Error in updating user",err);
+        res.status(500).send("Error in updating user", +err);
     }
 })
 
