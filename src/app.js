@@ -1,6 +1,8 @@
 const express = require("express");
 const connectDB = require("./config/database");
 const UserModel = require("./models/UserModel");
+const {validateUserData} = require("./utils/validation");
+const bcrypt = require('bcrypt');
 
 const app = express();
 
@@ -12,12 +14,45 @@ app.post("/signup", async (req, res) => {
   // sending data from postman to the database .
   // dynamic way to enter data into database .
 
-  console.log(req.body);
+//   console.log(req.body);
 
-  // creating new instance of the userModel .
-  const user = new UserModel(req.body);
-  await user.save();
-  res.send("Data received");
+  
+  try{
+    // validate the user data before creating user .
+    validateUserData(req);
+
+    const {firstName,lastName,emailId,password,age,photoURL,about,gender,skills} = req.body;
+
+    const passwordHash = await bcrypt.hash(password,10)
+
+
+    // creating new instance of the userModel .
+    const user = new UserModel(
+        {
+            firstName ,  // shorthand property names in object literal.
+            lastName,
+            emailId,
+            password : passwordHash,
+            age,
+            photoURL,
+            about,
+            gender,
+            skills,
+        }
+    );
+
+
+    await user.save();
+    res.send("Data received");
+    }catch(err){
+        return res.status(400).send(
+        {
+            error: err.message,
+            code: "INVALID_USER_DATA",
+            suggestion: "Please provide valid user data."
+        }
+    );
+  }
 
   // creating user to the database .
   // static way to enter data into database .
@@ -42,6 +77,8 @@ app.post("/signup", async (req, res) => {
 app.get("/user", async (req, res) => {
   const email = req.body.emailId;
   try {
+
+    
     const user = await UserModel.find(
       // returns an array of users matching the criteria.
       { emailId: email }
