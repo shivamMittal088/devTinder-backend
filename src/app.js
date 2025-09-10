@@ -3,9 +3,12 @@ const connectDB = require("./config/database");
 const UserModel = require("./models/UserModel");
 const {validateUserData} = require("./utils/validation");
 const bcrypt = require('bcrypt');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 
+app.use(cookieParser()); // parse the cookie without it req.cookies will be undefined.
 app.use(express.json()); // without this line req.body will be undefined.
 // it is a middleware which will parse the json data and put it in req.body .
 
@@ -149,7 +152,7 @@ app.patch("/updateUser/:userId",async(req,res)=>{
             );
         }
 
-        if(updatedData?.skills.length > 8){
+        if(updatedData?.skills && updatedData?.skills.length > 8){
             return res.status(400).send(
                 {
                     error: "Skills cannot be more than 8",
@@ -181,7 +184,71 @@ app.patch("/updateUser/:userId",async(req,res)=>{
 })
 
 
+// login API creation .
+app.post("/login" , async(req,res)=>{
+    const { emailId , password }  = req.body;
 
+    try{
+        const user = await UserModel.findOne(
+            {emailId : emailId}
+        )
+
+        if(!user){
+            return res.status(404).send("User not found");
+        }
+
+        const isMatch = await bcrypt.compare(password,user.password);
+
+        // valid login credentials.
+        if(isMatch){
+
+            // creating a jwt token and sending it to the user in cookie.
+            const token = await jwt.sign(
+                { _id : user._id }
+                , "DEV@TINDER$123"  // SECRET KEY ---> should be long and complex.
+                // stored only inside server .
+                , { expiresIn : "1h" }  // token will expire in 1 hour.
+            )   
+
+            // attaching the token in cookie.
+            res.cookie("auth_token",token);
+
+            return res.send("User logged in successfully");
+        }
+
+        return res.status(400).send("Invalid credentials");
+
+    }catch(err){
+        res.status(500).send("Error in logging in user", + err.message);
+    }
+})
+
+
+// Profile API creation .
+app.get("/profile" , async(req,res)=>{
+    // get the cookie 
+    const token = req.cookies?.auth_token;
+    if(!token){
+        return res.status(401).send("Unauthorized");
+    }
+
+    try{
+        // validate the user using the token.
+        const decoded = await jwt.verify(token,"DEV@TINDER$123");   
+        // if token is valid then decoded will contain the payload of the token.
+        // if token is invalid then it will throw an error.
+        
+        const userId = decoded._id;
+        const user = await UserModel.findById(userId);
+        if(!user){
+            return res.status(404).send("User not found");
+        }
+        return res.send(user);
+    }catch(err){
+        return res.status(401).send("Invalid token");
+    }
+})
+ 
 
 
 
